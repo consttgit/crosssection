@@ -7,7 +7,7 @@ These software modules are used to calculate sectorial properties of a cross sec
 This software is distributed under the terms of the [MIT License](https://opensource.org/licenses/MIT)
 
 ```
-Copyright (c) 2015 Konstantin Tolstikhin
+Copyright (c) 2016 Konstantin Tolstikhin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
