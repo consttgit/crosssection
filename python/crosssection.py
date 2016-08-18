@@ -28,7 +28,7 @@ class CrossSection(object):
     def __section_area_callback(self, node):
         if node.parent is None: return
 
-        ds = self.__contour_increment(node.point, node.parent.point)
+        ds = node.point.distance_to(node.parent.point)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
         self.__section_area += thickness * ds
 
@@ -49,7 +49,7 @@ class CrossSection(object):
     def __gravity_center_callback(self, node):
         if node.parent is None: return
 
-        ds = self.__contour_increment(node.point, node.parent.point)
+        ds = node.point.distance_to(node.parent.point)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__gravity_center.x += 0.5 * (
@@ -81,7 +81,7 @@ class CrossSection(object):
     def __inertia_moment_callback(self, node):
         if node.parent is None: return
 
-        ds = self.__contour_increment(node.point, node.parent.point)
+        ds = node.point.distance_to(node.parent.point)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__inertia_moment.x += 0.5 * (
@@ -95,13 +95,6 @@ class CrossSection(object):
     def get_polar_inertia_moment(self, lazy=True):
         return (self.get_inertia_moment(lazy).x
                 + self.get_inertia_moment(lazy).y)
-
-    def __contour_increment(self, cur_point, prev_point):
-        """Return a linear approximation of a non-linear contour increment.
-        """
-        dx = cur_point.x - prev_point.x
-        dy = cur_point.y - prev_point.y
-        return (dx**2 + dy**2)**0.5
 
     def __get_area_sign(self, start_point, end_point):
         """Return a sign of the sectorial area defined by given two points and
@@ -127,9 +120,9 @@ class CrossSection(object):
         """Return an area of a triangle formed by given three points using the
         Heron's formula.
         """
-        ab = ((b_point.x - a_point.x)**2 + (b_point.y - a_point.y)**2)**0.5
-        bc = ((c_point.x - b_point.x)**2 + (c_point.y - b_point.y)**2)**0.5
-        ca = ((a_point.x - c_point.x)**2 + (a_point.y - c_point.y)**2)**0.5
+        ab = a_point.distance_to(b_point)
+        bc = b_point.distance_to(c_point)
+        ca = c_point.distance_to(a_point)
         p = (ab + bc + ca) / 2
         return (p*(p - ab)*(p - bc)*(p - ca))**0.5
 
@@ -181,7 +174,7 @@ class CrossSection(object):
             node.parent.point.y - self.__pole_point.y
         )
 
-        ds = self.__contour_increment(node_point, node_parent_point)
+        ds = node_point.distance_to(node_parent_point)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__sectorial_static_moment += 0.5 * (
@@ -209,7 +202,7 @@ class CrossSection(object):
             node.parent.point.y - self.get_gravity_center().y
         )
 
-        ds = self.__contour_increment(node_point, node_parent_point)
+        ds = node_point.distance_to(node_parent_point)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__sectorial_linear_static_moment.x += 0.5 * (
@@ -277,7 +270,7 @@ class CrossSection(object):
             node.parent.point.y - self.get_rigidity_center().y
         )
 
-        ds = self.__contour_increment(node_point, node_parent_point)
+        ds = node_point.distance_to(node_parent_point)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__sectorial_inertia_moment += 0.5 * (
@@ -318,7 +311,7 @@ class CrossSection(object):
             }
             for c_node in connected_nodes:
                 for d_node in disconnected_nodes:
-                    dist = d_node.point.dist_to(c_node.point)
+                    dist = d_node.point.distance_to(c_node.point)
                     if dist < node_pair['dist']:
                         node_pair['dist'] = dist
                         node_pair['d_node'] = d_node
@@ -356,6 +349,13 @@ class Node(object):
             points=', '.join([str(node.point) for node in self.links])
         )
 
+    def __repr__(self):
+        return '{cls}(point={point}, thickness={thickness})'.format(
+            cls=self.__class__.__name__,
+            point=repr(self.point),
+            thickness=self.thickness
+        )
+
 
 class Point(object):
 
@@ -363,15 +363,13 @@ class Point(object):
         self.x = x
         self.y = y
 
-    def dist_to(self, other):
-        return ((self.x - other.x)**2 + (self.y - other.y)**2)**0.5
-
-    def __eq__(self, other):
-        return (isinstance(other, self.__class__) and self.x == other.x and
-            self.y == other.y)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
+    def distance_to(self, other):
+        return ((other.x - self.x)**2 + (other.y - self.y)**2)**0.5
 
     def __str__(self):
         return '({x:.2f}, {y:.2f})'.format(x=self.x, y=self.y)
+
+    def __repr__(self):
+        return '{cls}(x={x:.2f}, y={y:.2f})'.format(
+            cls=self.__class__.__name__, x=self.x, y=self.y
+        )
