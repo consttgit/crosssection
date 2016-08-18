@@ -1,20 +1,23 @@
 import java.util.ArrayList;
 
 
-public class Node {
-    public Point point;
-    public double thickness;
+public class Node extends Point {
+    public double thickness = 1.0;
     public double sectorialArea = 0.0;
     public ArrayList<Node> links = null;
     public Node parent = null;
 
-    public Node(Point point, double thickness) {
-        this.point = point;
+    public Node(double x, double y, double thickness) {
+        super(x, y);
         this.thickness = thickness;
     }
 
-    public Node(Point point) {
-        this(point, 1.0);
+    public Node(double x, double y) {
+        super(x, y);
+    }
+
+    public Node() {
+        super();
     }
 
     public void connect(Node node) {
@@ -28,11 +31,7 @@ public class Node {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (Node node : this.links) {
-            sb.append(node.point).append(", ");
-        }
-        String points = sb.toString();
-        return String.format("node: %s linked with: %s", this.point, points);
+        // --- TODO ---
+        throw new UnsupportedOperationException();
     }
 }
