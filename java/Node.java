@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+
+
 public class Node {
     public Point point;
     public double thickness;
@@ -15,14 +18,21 @@ public class Node {
     }
 
     public void connect(Node node) {
-        throw new NotImplementedException();
+        if (!links.contains(node)) {
+            links.add(node);    
+        }
     }
 
     public void disconnect(Node node) {
-        throw new NotImplementedException();
+        links.remove(node);
     }
 
     public String toString() {
-        throw new NotImplementedException();
+        StringBuilder sb = new StringBuilder();
+        for (Node node : this.links) {
+            sb.append(node.point).append(", ");
+        }
+        String points = sb.toString();
+        return String.format("node: %s linked with: %s", this.point, points);
     }
 }
