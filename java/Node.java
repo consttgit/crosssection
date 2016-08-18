@@ -4,7 +4,7 @@ import java.util.ArrayList;
 public class Node extends Point {
     public double thickness = 1.0;
     public double sectorialArea = 0.0;
-    public ArrayList<Node> links = null;
+    public ArrayList<Node> links = new ArrayList<Node>();
     public Node parent = null;
 
     public Node(double x, double y, double thickness) {
