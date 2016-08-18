@@ -13,19 +13,10 @@ public class Point {
         this(0.0, 0.0);
     }
 
-    public double distance(Point other) {
+    public double distanceTo(Point other) {
         return Math.sqrt(
-            Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2)
+            Math.pow(other.x - this.x, 2) + Math.pow(other.y - this.y, 2)
         );
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null) return false;
-        if (!(obj instanceof Point)) return false;
-        Point point = (Point)obj;
-        return ((this.x == point.x) && (this.y == point.y));
     }
 
     public String toString() {
