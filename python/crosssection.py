@@ -12,7 +12,7 @@ class CrossSection(object):
         self.__inertia_moment = None  # Ix,y (Point)
         self.__gravity_center = None  # Point
         self.__rigidity_center = None  # Point
-        self.__pole_point = None  # Point
+        self.__pole = None  # Point
 
     def get_section_area(self, lazy=True):
         """Return a total area of the cross section.
@@ -28,7 +28,7 @@ class CrossSection(object):
     def __section_area_callback(self, node):
         if node.parent is None: return
 
-        ds = node.point.distance_to(node.parent.point)
+        ds = node.distance_to(node.parent)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
         self.__section_area += thickness * ds
 
@@ -49,15 +49,15 @@ class CrossSection(object):
     def __gravity_center_callback(self, node):
         if node.parent is None: return
 
-        ds = node.point.distance_to(node.parent.point)
+        ds = node.distance_to(node.parent)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__gravity_center.x += 0.5 * (
-            node.point.x + node.parent.point.x
+            node.x + node.parent.x
         ) * thickness * ds
 
         self.__gravity_center.y += 0.5 * (
-            node.point.y + node.parent.point.y
+            node.y + node.parent.y
         ) * thickness * ds
 
     def get_inertia_moment(self, lazy=True):
@@ -70,8 +70,8 @@ class CrossSection(object):
         self.__inertia_moment = Point()
         self.__traverse_nodes(self.nodes[0], self.__inertia_moment_callback)
 
-        gc = self.get_gravity_center()
         sa = self.get_section_area()
+        gc = self.get_gravity_center()
 
         self.__inertia_moment.x -= sa * gc.y**2;
         self.__inertia_moment.y -= sa * gc.x**2;
@@ -81,15 +81,15 @@ class CrossSection(object):
     def __inertia_moment_callback(self, node):
         if node.parent is None: return
 
-        ds = node.point.distance_to(node.parent.point)
+        ds = node.distance_to(node.parent)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__inertia_moment.x += 0.5 * (
-            node.point.y**2 + node.parent.point.y**2
+            node.y**2 + node.parent.y**2
         ) * thickness * ds
 
         self.__inertia_moment.y += 0.5 * (
-            node.point.x**2 + node.parent.point.x**2
+            node.x**2 + node.parent.x**2
         ) * thickness * ds
 
     def get_polar_inertia_moment(self, lazy=True):
@@ -116,103 +116,107 @@ class CrossSection(object):
 
         return angle
 
-    def __get_triangle_area(self, a_point, b_point, c_point):
+    def __get_triangle_area(self, a, b, c):
         """Return an area of a triangle formed by given three points using the
         Heron's formula.
         """
-        ab = a_point.distance_to(b_point)
-        bc = b_point.distance_to(c_point)
-        ca = c_point.distance_to(a_point)
+        ab = a.distance_to(b)
+        bc = b.distance_to(c)
+        ca = c.distance_to(a)
         p = (ab + bc + ca) / 2
         return (p*(p - ab)*(p - bc)*(p - ca))**0.5
 
-    def __update_sectorial_area(self, root_node, pole_point):
+    def __update_sectorial_area(self, root_node, pole):
         """Update values of the sectorial area in nodes given a root node to
         start from and a pole point.
         """
         for node in self.nodes:
             node.sectorial_area = 0.0
-        self.__pole_point = pole_point
+        self.__pole = pole
         self.__traverse_nodes(root_node, self.__update_sectorial_area_callback)
 
     def __update_sectorial_area_callback(self, node):
         if node.parent is None: return
 
-        start_point = Point(
-            node.parent.point.x - self.__pole_point.x,
-            node.parent.point.y - self.__pole_point.y
+        node_pos = Point(
+            node.x - self.__pole.x,
+            node.y - self.__pole.y
         )
-        end_point = Point(
-            node.point.x - self.__pole_point.x,
-            node.point.y - self.__pole_point.y
-        )
-        center_point = Point()
 
-        area_sign = self.__get_area_sign(start_point, end_point)
-        area = self.__get_triangle_area(start_point, end_point, center_point)
+        node_parent_pos = Point(
+            node.parent.x - self.__pole.x,
+            node.parent.y - self.__pole.y
+        )
+
+        origin = Point()
+
+        area_sign = self.__get_area_sign(node_parent_pos, node_pos)
+        area = self.__get_triangle_area(node_parent_pos, node_pos, origin)
         area_inc = area_sign * area * 2
 
         node.sectorial_area = node.parent.sectorial_area + area_inc
 
-    def get_sectorial_static_moment(self, root_node, pole_point):
+    def get_sectorial_static_moment(self, root_node, pole):
         """Return a sectorial static moment of inertia (Sw).
         """
         self.__sectorial_static_moment = 0.0
-        self.__update_sectorial_area(root_node, pole_point)
+        self.__update_sectorial_area(root_node, pole)
         self.__traverse_nodes(root_node, self.__sectorial_static_moment_callback)
         return self.__sectorial_static_moment
 
     def __sectorial_static_moment_callback(self, node):
         if node.parent is None: return
 
-        node_point = Point(
-            node.point.x - self.__pole_point.x,
-            node.point.y - self.__pole_point.y
-        )
-        node_parent_point = Point(
-            node.parent.point.x - self.__pole_point.x,
-            node.parent.point.y - self.__pole_point.y
+        node_pos = Point(
+            node.x - self.__pole.x,
+            node.y - self.__pole.y
         )
 
-        ds = node_point.distance_to(node_parent_point)
+        node_parent_pos = Point(
+            node.parent.x - self.__pole.x,
+            node.parent.y - self.__pole.y
+        )
+
+        ds = node_pos.distance_to(node_parent_pos)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__sectorial_static_moment += 0.5 * (
             node.sectorial_area + node.parent.sectorial_area
         ) * thickness * ds
 
-    def get_sectorial_linear_static_moment(self, root_node, pole_point):
+    def get_sectorial_linear_static_moment(self, root_node, pole):
         """Return a point whose coordinates represent sectorial linear static
         moments of inertia calculated for the corresponding axes (Swx,y).
         """
         self.__sectorial_linear_static_moment = Point()
-        self.__update_sectorial_area(root_node, pole_point)
+        self.__update_sectorial_area(root_node, pole)
         self.__traverse_nodes(root_node, self.__sectorial_linear_static_moment_callback)
         return self.__sectorial_linear_static_moment
 
     def __sectorial_linear_static_moment_callback(self, node):
         if node.parent is None: return
 
-        node_point = Point(
-            node.point.x - self.get_gravity_center().x,
-            node.point.y - self.get_gravity_center().y
-        )
-        node_parent_point = Point(
-            node.parent.point.x - self.get_gravity_center().x,
-            node.parent.point.y - self.get_gravity_center().y
+        node_pos = Point(
+            node.x - self.get_gravity_center().x,
+            node.y - self.get_gravity_center().y
         )
 
-        ds = node_point.distance_to(node_parent_point)
+        node_parent_pos = Point(
+            node.parent.x - self.get_gravity_center().x,
+            node.parent.y - self.get_gravity_center().y
+        )
+
+        ds = node_pos.distance_to(node_parent_pos)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__sectorial_linear_static_moment.x += 0.5 * (
-            node_point.y * node.sectorial_area +
-            node_parent_point.y * node.parent.sectorial_area
+            node_pos.y * node.sectorial_area +
+            node_parent_pos.y * node.parent.sectorial_area
         ) * thickness * ds
 
         self.__sectorial_linear_static_moment.y += 0.5 * (
-            node_point.x * node.sectorial_area +
-            node_parent_point.x * node.parent.sectorial_area
+            node_pos.x * node.sectorial_area +
+            node_parent_pos.x * node.parent.sectorial_area
         ) * thickness * ds
 
     def get_rigidity_center(self, lazy=True):
@@ -221,14 +225,14 @@ class CrossSection(object):
         if self.__rigidity_center and lazy:
             return self.__rigidity_center
 
-        pole_point = Point()
-        sectorial_linear_static_moment = \
-            self.get_sectorial_linear_static_moment(self.nodes[0], pole_point)
-        inertia_moment = self.get_inertia_moment()
+        pole = Point()
+
+        slsm = self.get_sectorial_linear_static_moment(self.nodes[0], pole)
+        im = self.get_inertia_moment()
 
         self.__rigidity_center = Point(
-            pole_point.x + sectorial_linear_static_moment.x / inertia_moment.x,
-            pole_point.y - sectorial_linear_static_moment.y / inertia_moment.y
+            pole.x + slsm.x / im.x,
+            pole.y - slsm.y / im.y
         )
 
         return self.__rigidity_center
@@ -240,18 +244,18 @@ class CrossSection(object):
             return self.__sectorial_inertia_moment
 
         root_node = None
-        pole_point = self.get_rigidity_center()
+        pole = self.get_rigidity_center()
 
         s_min = float('inf')
         for node in self.nodes:
-            ssm = self.get_sectorial_static_moment(node, pole_point)
-            slsm = self.get_sectorial_linear_static_moment(node, pole_point)
+            ssm = self.get_sectorial_static_moment(node, pole)
+            slsm = self.get_sectorial_linear_static_moment(node, pole)
             s = abs(ssm) + abs(slsm.x) + abs(slsm.y)
             if s < s_min:
                 s_min = s
                 root_node = node
 
-        self.__update_sectorial_area(root_node, pole_point)
+        self.__update_sectorial_area(root_node, pole)
 
         self.__sectorial_inertia_moment = 0.0
         self.__traverse_nodes(root_node, self.__sectorial_inertia_moment_callback)
@@ -261,16 +265,17 @@ class CrossSection(object):
     def __sectorial_inertia_moment_callback(self, node):
         if node.parent is None: return
 
-        node_point = Point(
-            node.point.x - self.get_rigidity_center().x,
-            node.point.y - self.get_rigidity_center().y
-        )
-        node_parent_point = Point(
-            node.parent.point.x - self.get_rigidity_center().x,
-            node.parent.point.y - self.get_rigidity_center().y
+        node_pos = Point(
+            node.x - self.get_rigidity_center().x,
+            node.y - self.get_rigidity_center().y
         )
 
-        ds = node_point.distance_to(node_parent_point)
+        node_parent_pos = Point(
+            node.parent.x - self.get_rigidity_center().x,
+            node.parent.y - self.get_rigidity_center().y
+        )
+
+        ds = node_pos.distance_to(node_parent_pos)
         thickness = 0.5 * (node.thickness + node.parent.thickness)
 
         self.__sectorial_inertia_moment += 0.5 * (
@@ -311,7 +316,7 @@ class CrossSection(object):
             }
             for c_node in connected_nodes:
                 for d_node in disconnected_nodes:
-                    dist = d_node.point.distance_to(c_node.point)
+                    dist = d_node.distance_to(c_node)
                     if dist < node_pair['dist']:
                         node_pair['dist'] = dist
                         node_pair['d_node'] = d_node
@@ -324,37 +329,6 @@ class CrossSection(object):
             disconnected_nodes.remove(node_pair['d_node'])
 
         return connected_nodes
-
-
-class Node(object):
-
-    def __init__(self, point, thickness=1.0):
-        self.point = point
-        self.thickness = thickness
-        self.sectorial_area = 0.0
-        self.links = []
-        self.parent = None
-
-    def connect(self, node):
-        if node not in self.links:
-            self.links.append(node)
-
-    def disconnect(self, node):
-        if node in self.links:
-            self.links.remove(node)
-
-    def __str__(self):
-        return 'node: {point} linked with: {points}'.format(
-            point=self.point,
-            points=', '.join([str(node.point) for node in self.links])
-        )
-
-    def __repr__(self):
-        return '{cls}(point={point}, thickness={thickness})'.format(
-            cls=self.__class__.__name__,
-            point=repr(self.point),
-            thickness=self.thickness
-        )
 
 
 class Point(object):
@@ -372,4 +346,34 @@ class Point(object):
     def __repr__(self):
         return '{cls}(x={x:.2f}, y={y:.2f})'.format(
             cls=self.__class__.__name__, x=self.x, y=self.y
+        )
+
+
+class Node(Point):
+
+    def __init__(self, x=0.0, y=0.0, thickness=1.0):
+        self.thickness = thickness
+        self.sectorial_area = 0.0
+        self.links = []
+        self.parent = None
+        super(Node, self).__init__(x, y)
+
+    def connect(self, node):
+        if node not in self.links:
+            self.links.append(node)
+
+    def disconnect(self, node):
+        if node in self.links:
+            self.links.remove(node)
+
+    def __str__(self):
+        return 'node: {p} linked with: {ps}'.format(
+            p=super(Node, self).__str__(),
+            ps=', '.join([super(Node, node).__str__() for node in self.links])
+        )
+
+    def __repr__(self):
+        return '{cls}(x={x:.2f}, y={y:.2f}, thickness={thickness})'.format(
+            cls=self.__class__.__name__, x=self.x, y=self.y,
+            thickness=self.thickness
         )
