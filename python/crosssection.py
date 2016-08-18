@@ -148,10 +148,10 @@ class CrossSection(object):
             node.parent.y - self.__pole.y
         )
 
-        origin = Point()
+        origin_pos = Point()
 
         area_sign = self.__get_area_sign(node_parent_pos, node_pos)
-        area = self.__get_triangle_area(node_parent_pos, node_pos, origin)
+        area = self.__get_triangle_area(node_parent_pos, node_pos, origin_pos)
         area_inc = area_sign * area * 2
 
         node.sectorial_area = node.parent.sectorial_area + area_inc
@@ -227,12 +227,13 @@ class CrossSection(object):
 
         pole = Point()
 
-        slsm = self.get_sectorial_linear_static_moment(self.nodes[0], pole)
-        im = self.get_inertia_moment()
+        inertia_moment = self.get_inertia_moment()
+        sectorial_linear_static_moment = \
+            self.get_sectorial_linear_static_moment(self.nodes[0], pole)
 
         self.__rigidity_center = Point(
-            pole.x + slsm.x / im.x,
-            pole.y - slsm.y / im.y
+            pole.x + sectorial_linear_static_moment.x / inertia_moment.x,
+            pole.y - sectorial_linear_static_moment.y / inertia_moment.y
         )
 
         return self.__rigidity_center
@@ -352,11 +353,11 @@ class Point(object):
 class Node(Point):
 
     def __init__(self, x=0.0, y=0.0, thickness=1.0):
+        super(Node, self).__init__(x, y)
         self.thickness = thickness
         self.sectorial_area = 0.0
         self.links = []
         self.parent = None
-        super(Node, self).__init__(x, y)
 
     def connect(self, node):
         if node not in self.links:
