@@ -4,7 +4,7 @@ import math
 class CrossSection(object):
     
     def __init__(self, nodes):
-        self.nodes = self.__connect(nodes)
+        self.__nodes = self.__connect(nodes)
         self.__section_area = 0.0  # F
         self.__sectorial_static_moment = 0.0  # Sw
         self.__sectorial_inertia_moment = 0.0  # Iw
@@ -21,7 +21,7 @@ class CrossSection(object):
             return self.__section_area
 
         self.__section_area = 0.0
-        self.__traverse_nodes(self.nodes[0], self.__section_area_callback)
+        self.__traverse_nodes(self.__nodes[0], self.__section_area_callback)
 
         return self.__section_area
 
@@ -39,7 +39,7 @@ class CrossSection(object):
             return self.__gravity_center
 
         self.__gravity_center = Point()
-        self.__traverse_nodes(self.nodes[0], self.__gravity_center_callback)
+        self.__traverse_nodes(self.__nodes[0], self.__gravity_center_callback)
 
         self.__gravity_center.x /= self.get_section_area()
         self.__gravity_center.y /= self.get_section_area()
@@ -68,7 +68,7 @@ class CrossSection(object):
             return self.__inertia_moment
 
         self.__inertia_moment = Point()
-        self.__traverse_nodes(self.nodes[0], self.__inertia_moment_callback)
+        self.__traverse_nodes(self.__nodes[0], self.__inertia_moment_callback)
 
         sa = self.get_section_area()
         gc = self.get_gravity_center()
@@ -130,7 +130,7 @@ class CrossSection(object):
         """Update values of the sectorial area in nodes given a root node to
         start from and a pole point.
         """
-        for node in self.nodes:
+        for node in self.__nodes:
             node.sectorial_area = 0.0
         self.__pole = pole
         self.__traverse_nodes(root_node, self.__update_sectorial_area_callback)
@@ -229,7 +229,7 @@ class CrossSection(object):
 
         inertia_moment = self.get_inertia_moment()
         sectorial_linear_static_moment = \
-            self.get_sectorial_linear_static_moment(self.nodes[0], pole)
+            self.get_sectorial_linear_static_moment(self.__nodes[0], pole)
 
         self.__rigidity_center = Point(
             pole.x + sectorial_linear_static_moment.x / inertia_moment.x,
@@ -248,7 +248,7 @@ class CrossSection(object):
         pole = self.get_rigidity_center()
 
         s_min = float('inf')
-        for node in self.nodes:
+        for node in self.__nodes:
             ssm = self.get_sectorial_static_moment(node, pole)
             slsm = self.get_sectorial_linear_static_moment(node, pole)
             s = abs(ssm) + abs(slsm.x) + abs(slsm.y)
@@ -287,7 +287,7 @@ class CrossSection(object):
         """Traverse nodes using DFS invoking at each step a callback function
         which receives the current node as its parameter.
         """
-        for node in self.nodes:
+        for node in self.__nodes:
             node.parent = None
 
         visited_nodes = []
