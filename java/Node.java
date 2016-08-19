@@ -31,7 +31,13 @@ public class Node extends Point {
     }
 
     public String toString() {
-        // --- TODO ---
-        throw new UnsupportedOperationException();
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("node: (%.2f, %.2f) linked with: ",
+                  this.x, this.y));
+        for (Node node : this.links) {
+            sb.append(String.format("(%.2f, %.2f), ", node.x, node.y));
+        }
+        sb.append("\n");
+        return sb.toString();
     }
 }
