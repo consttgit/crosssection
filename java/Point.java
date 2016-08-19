@@ -26,4 +26,9 @@ public class Point {
     public static int getNum() {
         return num;
     }
+
+    protected void finalize() throws Throwable {
+        num--;
+        super.finalize();
+    }
 }
