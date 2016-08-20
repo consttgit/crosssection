@@ -50,5 +50,7 @@ public class CrossSectionTest {
                           cs.getGravityCenter());
         System.out.printf("-- Main moments of inertia (Ix, Iy): %s mm^4\n",
                           cs.getInertiaMoment());
+        System.out.printf("-- Polar moment of inertia (Ip): %.2f mm^4\n",
+                          cs.getPolarInertiaMoment());
     }
 }

@@ -114,8 +114,16 @@ public class CrossSection {
         ) * thickness * ds;
     }
 
+    public double getPolarInertiaMoment() {
+        return getInertiaMoment(true).x + getInertiaMoment(true).y;
+    }
+
+    public double getPolarInertiaMoment(boolean lazy) {
+        return getInertiaMoment(lazy).x + getInertiaMoment(lazy).y;
+    }
+
     private void traverseNodes(Node rootNode, Callback callback) {
-        for (Node node : this.nodes) {
+        for (Node node : nodes) {
             node.parent = null;
         }
 
