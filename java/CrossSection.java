@@ -1,3 +1,4 @@
+import java.util.Stack;
 import java.util.ArrayList;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
@@ -28,7 +29,8 @@ public class CrossSection {
         }
 
         sectionArea = 0.0;
-        traverseNodes(this.nodes.get(0), "sectionAreaCallback");
+        traverseNodes(this.nodes.get(0),
+                      (Node node) -> this.sectionAreaCallback(node));
 
         return sectionArea;
     }
@@ -51,7 +53,8 @@ public class CrossSection {
         }
 
         gravityCenter = new Point();
-        traverseNodes(this.nodes.get(0), "gravityCenterCallback");
+        traverseNodes(this.nodes.get(0),
+                      (Node node) -> this.gravityCenterCallback(node));
 
         gravityCenter.x /= getSectionArea();
         gravityCenter.y /= getSectionArea();
@@ -74,28 +77,26 @@ public class CrossSection {
         ) * thickness * ds;
     }
 
-
-
-    private void traverseNodes(Node rootNode, String methodName) {
-        Method callback = null;
-
-        try {
-            callback = this.getClass().getMethod(methodName, Node.class);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-            return;
+    private void traverseNodes(Node rootNode, Callback callback) {
+        for (Node node : this.nodes) {
+            node.parent = null;
         }
 
-        // ...
+        ArrayList<Node> visitedNodes = new ArrayList<Node>();
+        Stack<Node> nodesToVisit = new Stack<Node>();
 
-        try {
-            callback.invoke(this, this.nodes.get(0));
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
+        nodesToVisit.push(rootNode);
+
+        while (!nodesToVisit.empty()) {
+            Node curNode = nodesToVisit.pop();
+            for (Node node : curNode.links) {
+                if (!visitedNodes.contains(node)) {
+                    node.parent = curNode;
+                    nodesToVisit.push(node);
+                }
+            }
+            callback.invoke(curNode);
+            visitedNodes.add(curNode);
         }
     }
 
@@ -130,4 +131,9 @@ public class CrossSection {
 
         return connectedNodes;
     }
+}
+
+
+interface Callback {
+    void invoke(Node node);
 }
