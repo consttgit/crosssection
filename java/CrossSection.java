@@ -29,8 +29,8 @@ public class CrossSection {
         }
 
         sectionArea = 0.0;
-        traverseNodes(this.nodes.get(0),
-                      (Node node) -> this.sectionAreaCallback(node));
+        traverseNodes(nodes.get(0),
+                      (Node node) -> sectionAreaCallback(node));
 
         return sectionArea;
     }
@@ -53,8 +53,8 @@ public class CrossSection {
         }
 
         gravityCenter = new Point();
-        traverseNodes(this.nodes.get(0),
-                      (Node node) -> this.gravityCenterCallback(node));
+        traverseNodes(nodes.get(0),
+                      (Node node) -> gravityCenterCallback(node));
 
         gravityCenter.x /= getSectionArea();
         gravityCenter.y /= getSectionArea();
@@ -74,6 +74,43 @@ public class CrossSection {
 
         gravityCenter.y += 0.5 * (
             node.y + node.parent.y
+        ) * thickness * ds;
+    }
+
+    public Point getInertiaMoment() {
+        return getInertiaMoment(true);
+    }
+
+    public Point getInertiaMoment(boolean lazy) {
+        if (inertiaMoment != null && lazy) {
+            return inertiaMoment;
+        }
+
+        inertiaMoment = new Point();
+        traverseNodes(nodes.get(0),
+                      (Node node) -> inertiaMomentCallback(node));
+
+        double sa = getSectionArea();
+        Point gc = getGravityCenter();
+
+        inertiaMoment.x -= sa * Math.pow(gc.y, 2);
+        inertiaMoment.y -= sa * Math.pow(gc.x, 2);
+
+        return inertiaMoment;
+    }
+
+    private void inertiaMomentCallback(Node node) {
+        if (node.parent == null) return;
+
+        double ds = node.distanceTo(node.parent);
+        double thickness = 0.5 * (node.thickness + node.parent.thickness);
+
+        inertiaMoment.x += 0.5 * (
+            Math.pow(node.y, 2) + Math.pow(node.parent.y, 2)
+        ) * thickness * ds;
+
+        inertiaMoment.y += 0.5 * (
+            Math.pow(node.x, 2) + Math.pow(node.parent.x, 2)
         ) * thickness * ds;
     }
 
