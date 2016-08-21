@@ -18,10 +18,10 @@ public class CrossSection {
         this.nodes = connect(nodes);
     }
 
-    public double getSectionArea() {
-        return getSectionArea(true);
-    }
-
+    /**
+     * Return a total area of the cross section.
+     *
+     */
     public double getSectionArea(boolean lazy) {
         if (sectionArea > 0 && lazy) {
             return sectionArea;
@@ -34,6 +34,10 @@ public class CrossSection {
         return sectionArea;
     }
 
+    public double getSectionArea() {
+        return getSectionArea(true);
+    }
+
     private void sectionAreaCallback(Node node) {
         if (node.parent == null) return;
 
@@ -42,10 +46,10 @@ public class CrossSection {
         sectionArea += thickness * ds;
     }
 
-    public Point getGravityCenter() {
-        return getGravityCenter(true);
-    }
-
+    /**
+     * Return a point where the center of gravity is located.
+     *
+     */
     public Point getGravityCenter(boolean lazy) {
         if (gravityCenter != null && lazy) {
             return gravityCenter;
@@ -59,6 +63,10 @@ public class CrossSection {
         gravityCenter.y /= getSectionArea();
 
         return gravityCenter;
+    }
+
+    public Point getGravityCenter() {
+        return getGravityCenter(true);
     }
 
     private void gravityCenterCallback(Node node) {
@@ -76,10 +84,11 @@ public class CrossSection {
         ) * thickness * ds;
     }
 
-    public Point getInertiaMoment() {
-        return getInertiaMoment(true);
-    }
-
+    /**
+     * Return a point whose coordinates represent main moments of inertia
+     * calculated for the corresponding axis (Ix,y).
+     *
+     */
     public Point getInertiaMoment(boolean lazy) {
         if (inertiaMoment != null && lazy) {
             return inertiaMoment;
@@ -98,6 +107,10 @@ public class CrossSection {
         return inertiaMoment;
     }
 
+    public Point getInertiaMoment() {
+        return getInertiaMoment(true);
+    }
+
     private void inertiaMomentCallback(Node node) {
         if (node.parent == null) return;
 
@@ -113,18 +126,32 @@ public class CrossSection {
         ) * thickness * ds;
     }
 
-    public double getPolarInertiaMoment() {
-        return getInertiaMoment(true).x + getInertiaMoment(true).y;
-    }
-
+    /**
+     * Return a polar moment of inertia (Ip).
+     *
+     */
     public double getPolarInertiaMoment(boolean lazy) {
         return getInertiaMoment(lazy).x + getInertiaMoment(lazy).y;
     }
 
+    public double getPolarInertiaMoment() {
+        return getInertiaMoment(true).x + getInertiaMoment(true).y;
+    }
+
+    /**
+     * Return a sign of the sectorial area defined by given two points and a
+     * reference origin.
+     *
+     */
     private double getAreaSign(Point start, Point end) {
         return Math.signum(getAngle(end) - getAngle(start));
     }
 
+    /**
+     * Return an angle between X-axis and a radius vector defined by a given
+     * point and the reference origin.
+     *
+     */
     private double getAngle(Point p) {
         double angle = Math.toDegrees(Math.atan2(p.y, p.x));
         angle = (double) Math.round(angle * 100) / 100;
@@ -136,6 +163,11 @@ public class CrossSection {
         return angle;
     }
 
+    /**
+     * Return an area of a triangle formed by given three points using the
+     * Heron's formula.
+     *
+     */
     private double getTriangleArea(Point a, Point b, Point c) {
         double ab = a.distanceTo(b);
         double bc = b.distanceTo(c);
@@ -144,6 +176,11 @@ public class CrossSection {
         return Math.sqrt(p*(p - ab)*(p - bc)*(p - ca));
     }
 
+    /**
+     * Update values of the sectorial area in nodes given a root node to start
+     * from and a pole point.
+     *
+     */
     private void updateSectorialArea(Node rootNode, Point pole) {
         for (Node node : nodes) {
             node.sectorialArea = 0.0;
@@ -175,6 +212,10 @@ public class CrossSection {
         node.sectorialArea = node.parent.sectorialArea + areaInc;
     }
 
+    /**
+     * Return a sectorial static moment of inertia (Sw).
+     *
+     */
     public double getSectorialStaticMoment(Node rootNode, Point pole) {
         sectorialStaticMoment = 0.0;
         updateSectorialArea(rootNode, pole);
@@ -204,6 +245,11 @@ public class CrossSection {
         ) * thickness * ds;
     }
 
+    /**
+     * Return a point whose coordinates represent sectorial linear static
+     * moments of inertia calculated for the corresponding axes (Swx,y).
+     *
+     */
     public Point getSectorialLinearStaticMoment(Node rootNode, Point pole) {
         sectorialLinearStaticMoment = new Point();
         updateSectorialArea(rootNode, pole);
@@ -239,10 +285,10 @@ public class CrossSection {
         ) * thickness * ds;
     }
 
-    public Point getRigidityCenter() {
-        return getRigidityCenter(true);
-    }
-
+    /**
+     * Return a point where the rigidity center is located.
+     *
+     */
     public Point getRigidityCenter(boolean lazy) {
         if (rigidityCenter != null && lazy) {
             return rigidityCenter;
@@ -262,10 +308,14 @@ public class CrossSection {
         return rigidityCenter;
     }
 
-    public double getSectorialInertiaMoment() {
-        return getSectorialInertiaMoment(true);
+    public Point getRigidityCenter() {
+        return getRigidityCenter(true);
     }
 
+    /**
+     * Return a sectorial moment of inertia (Iw).
+     *
+     */
     public double getSectorialInertiaMoment(boolean lazy) {
         if (sectorialInertiaMoment > 0.0 && lazy) {
             return sectorialInertiaMoment;
@@ -294,6 +344,10 @@ public class CrossSection {
         return sectorialInertiaMoment;
     }
 
+    public double getSectorialInertiaMoment() {
+        return getSectorialInertiaMoment(true);
+    }
+
     private void sectorialInertiaMomentCallback(Node node) {
         if (node.parent == null) return;
 
@@ -316,6 +370,11 @@ public class CrossSection {
         ) * thickness * ds;
     }
 
+    /**
+     * Traverse nodes using DFS invoking at each step a callback function which
+     * receives the current node as its parameter.
+     *
+     */
     private void traverseNodes(Node rootNode, Callback callback) {
         for (Node node : nodes) {
             node.parent = null;
@@ -339,6 +398,11 @@ public class CrossSection {
         }
     }
 
+    /**
+     * Connect nodes in a given list. That is, build a minimum spanning tree
+     * (MST) using a greedy algorithm.
+     *
+     */
     private ArrayList<Node> connect(Node[] nodes) {
         ArrayList<Node> connectedNodes = new ArrayList<Node>();
         ArrayList<Node> disconnectedNodes = 
