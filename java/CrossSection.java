@@ -411,26 +411,26 @@ public class CrossSection {
         connectedNodes.add(disconnectedNodes.remove(nodes.length - 1));
 
         while (disconnectedNodes.size() > 0) {
-            double min_dist = Double.POSITIVE_INFINITY;
-            Node d_node = null;
-            Node c_node = null;
+            double minDist = Double.POSITIVE_INFINITY;
+            Node dNode = null;
+            Node cNode = null;
 
             for (Node c : connectedNodes) {
                 for (Node d : disconnectedNodes) {
                     double dist = d.distanceTo(c);
-                    if (dist < min_dist) {
-                        min_dist = dist;
-                        d_node = d;
-                        c_node = c;
+                    if (dist < minDist) {
+                        minDist = dist;
+                        dNode = d;
+                        cNode = c;
                     }
                 }
             }
 
-            c_node.connect(d_node);
-            d_node.connect(c_node);
+            cNode.connect(dNode);
+            dNode.connect(cNode);
 
-            connectedNodes.add(d_node);
-            disconnectedNodes.remove(d_node);
+            connectedNodes.add(dNode);
+            disconnectedNodes.remove(dNode);
         }
 
         return connectedNodes;
