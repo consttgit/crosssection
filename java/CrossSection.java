@@ -1,4 +1,5 @@
 import java.util.Stack;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
@@ -15,7 +16,7 @@ public class CrossSection {
     private Point rigidityCenter = null;
     private Point pole = null;
 
-    public CrossSection(ArrayList<Node> nodes) {
+    public CrossSection(Node[] nodes) {
         this.nodes = connect(nodes);
     }
 
@@ -145,11 +146,12 @@ public class CrossSection {
         }
     }
 
-    private ArrayList<Node> connect(ArrayList<Node> nodes) {
+    private ArrayList<Node> connect(Node[] nodes) {
         ArrayList<Node> connectedNodes = new ArrayList<Node>();
-        ArrayList<Node> disconnectedNodes = new ArrayList<Node>(nodes);
+        ArrayList<Node> disconnectedNodes = 
+            new ArrayList<Node>(Arrays.asList(nodes));
 
-        connectedNodes.add(disconnectedNodes.remove(nodes.size() - 1));
+        connectedNodes.add(disconnectedNodes.remove(nodes.length - 1));
 
         while (disconnectedNodes.size() > 0) {
             double min_dist = Double.POSITIVE_INFINITY;
