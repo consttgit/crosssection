@@ -1,12 +1,10 @@
 public class Point {
     public double x;
     public double y;
-    private static int num = 0;
 
     public Point(double x, double y) {
         this.x = x;
         this.y = y;
-        ++num;
     }
 
     public Point() {
@@ -21,14 +19,5 @@ public class Point {
 
     public String toString() {
         return String.format("(%.2f, %.2f)", this.x, this.y);
-    }
-
-    public static int getNum() {
-        return num;
-    }
-
-    protected void finalize() throws Throwable {
-        --num;
-        super.finalize();
     }
 }

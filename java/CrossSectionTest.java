@@ -52,5 +52,9 @@ public class CrossSectionTest {
                           cs.getInertiaMoment());
         System.out.printf("-- Polar moment of inertia (Ip): %.2f mm^4\n",
                           cs.getPolarInertiaMoment());
+        System.out.printf("-- Center of rigidity (x, y): %s mm\n",
+                          cs.getRigidityCenter());
+        System.out.printf("-- Sectorial moment of inertia (Iw): %.2f mm^6\n",
+                          cs.getSectorialInertiaMoment());
     }
 }

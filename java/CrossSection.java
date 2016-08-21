@@ -121,6 +121,201 @@ public class CrossSection {
         return getInertiaMoment(lazy).x + getInertiaMoment(lazy).y;
     }
 
+    private double getAreaSign(Point start, Point end) {
+        return Math.signum(getAngle(end) - getAngle(start));
+    }
+
+    private double getAngle(Point p) {
+        double angle = Math.toDegrees(Math.atan2(p.y, p.x));
+        angle = (double) Math.round(angle * 100) / 100;
+
+        if (angle < 0.0) {
+            angle += 360.0;
+        }
+
+        return angle;
+    }
+
+    private double getTriangleArea(Point a, Point b, Point c) {
+        double ab = a.distanceTo(b);
+        double bc = b.distanceTo(c);
+        double ca = c.distanceTo(a);
+        double p = (ab + bc + ca) / 2.0;
+        return Math.sqrt(p*(p - ab)*(p - bc)*(p - ca));
+    }
+
+    private void updateSectorialArea(Node rootNode, Point pole) {
+        for (Node node : nodes) {
+            node.sectorialArea = 0.0;
+        }
+        this.pole = pole;
+        traverseNodes(rootNode,
+                      (Node node) -> updateSectorialAreaCallback(node));
+    }
+
+    private void updateSectorialAreaCallback(Node node) {
+        if (node.parent == null) return;
+
+        Point nodePos = new Point(
+            node.x - pole.x,
+            node.y - pole.y
+        );
+
+        Point nodeParentPos = new Point(
+            node.parent.x - pole.x,
+            node.parent.y - pole.y
+        );
+
+        Point originPos = new Point();
+
+        double areaSign = getAreaSign(nodeParentPos, nodePos);
+        double area = getTriangleArea(nodeParentPos, nodePos, originPos);
+        double areaInc = areaSign * area * 2.0;
+
+        node.sectorialArea = node.parent.sectorialArea + areaInc;
+    }
+
+    public double getSectorialStaticMoment(Node rootNode, Point pole) {
+        sectorialStaticMoment = 0.0;
+        updateSectorialArea(rootNode, pole);
+        traverseNodes(rootNode,
+                      (Node node) -> sectorialStaticMomentCallback(node));
+        return sectorialStaticMoment;
+    }
+
+    private void sectorialStaticMomentCallback(Node node) {
+        if (node.parent == null) return;
+
+        Point nodePos = new Point(
+            node.x - pole.x,
+            node.y - pole.y
+        );
+
+        Point nodeParentPos = new Point(
+            node.parent.x - pole.x,
+            node.parent.y - pole.y
+        );
+
+        double ds = nodePos.distanceTo(nodeParentPos);
+        double thickness = 0.5 * (node.thickness + node.parent.thickness);
+
+        sectorialStaticMoment += 0.5 * (
+            node.sectorialArea + node.parent.sectorialArea
+        ) * thickness * ds;
+    }
+
+    public Point getSectorialLinearStaticMoment(Node rootNode, Point pole) {
+        sectorialLinearStaticMoment = new Point();
+        updateSectorialArea(rootNode, pole);
+        traverseNodes(rootNode,
+                      (Node node) -> sectorialLinearStaticMomentCallback(node));
+        return sectorialLinearStaticMoment;
+    }
+
+    private void sectorialLinearStaticMomentCallback(Node node) {
+        if (node.parent == null) return;
+
+        Point nodePos = new Point(
+            node.x - getGravityCenter().x,
+            node.y - getGravityCenter().y
+        );
+
+        Point nodeParentPos = new Point(
+            node.parent.x - getGravityCenter().x,
+            node.parent.y - getGravityCenter().y
+        );
+
+        double ds = nodePos.distanceTo(nodeParentPos);
+        double thickness = 0.5 * (node.thickness + node.parent.thickness);
+
+        sectorialLinearStaticMoment.x += 0.5 * (
+            nodePos.y * node.sectorialArea +
+            nodeParentPos.y * node.parent.sectorialArea
+        ) * thickness * ds;
+
+        sectorialLinearStaticMoment.y += 0.5 * (
+            nodePos.x * node.sectorialArea +
+            nodeParentPos.x * node.parent.sectorialArea
+        ) * thickness * ds;
+    }
+
+    public Point getRigidityCenter() {
+        return getRigidityCenter(true);
+    }
+
+    public Point getRigidityCenter(boolean lazy) {
+        if (rigidityCenter != null && lazy) {
+            return rigidityCenter;
+        }
+
+        Point pole = new Point();
+
+        Point inertiaMoment = getInertiaMoment();
+        Point sectorialLinearStaticMoment =
+            getSectorialLinearStaticMoment(nodes.get(0), pole);
+
+        rigidityCenter = new Point(
+            pole.x + sectorialLinearStaticMoment.x / inertiaMoment.x,
+            pole.y - sectorialLinearStaticMoment.y / inertiaMoment.y
+        );
+
+        return rigidityCenter;
+    }
+
+    public double getSectorialInertiaMoment() {
+        return getSectorialInertiaMoment(true);
+    }
+
+    public double getSectorialInertiaMoment(boolean lazy) {
+        if (sectorialInertiaMoment > 0.0 && lazy) {
+            return sectorialInertiaMoment;
+        }
+
+        Node rootNode = null;
+        Point pole = getRigidityCenter();
+
+        double sMin = Double.POSITIVE_INFINITY;
+        for (Node node : nodes) {
+            double ssm = getSectorialStaticMoment(node, pole);
+            Point slsm = getSectorialLinearStaticMoment(node, pole);
+            double s = Math.abs(ssm) + Math.abs(slsm.x) + Math.abs(slsm.y);
+            if (s < sMin) {
+                sMin = s;
+                rootNode = node;
+            }
+        }
+
+        updateSectorialArea(rootNode, pole);
+
+        sectorialInertiaMoment = 0.0;
+        traverseNodes(rootNode,
+                      (Node node) -> sectorialInertiaMomentCallback(node));
+
+        return sectorialInertiaMoment;
+    }
+
+    private void sectorialInertiaMomentCallback(Node node) {
+        if (node.parent == null) return;
+
+        Point nodePos = new Point(
+            node.x - getRigidityCenter().x,
+            node.y - getRigidityCenter().y
+        );
+
+        Point nodeParentPos = new Point(
+            node.parent.x - getRigidityCenter().x,
+            node.parent.y - getRigidityCenter().y
+        );
+
+        double ds = nodePos.distanceTo(nodeParentPos);
+        double thickness = 0.5 * (node.thickness + node.parent.thickness);
+
+        sectorialInertiaMoment += 0.5 * (
+            Math.pow(node.sectorialArea, 2) +
+            Math.pow(node.parent.sectorialArea, 2)
+        ) * thickness * ds;
+    }
+
     private void traverseNodes(Node rootNode, Callback callback) {
         for (Node node : nodes) {
             node.parent = null;
