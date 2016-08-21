@@ -28,7 +28,7 @@ public class Point {
     }
 
     protected void finalize() throws Throwable {
-        num--;
+        --num;
         super.finalize();
     }
 }
