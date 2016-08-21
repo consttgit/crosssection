@@ -176,9 +176,8 @@ public class CrossSection {
 
         return connectedNodes;
     }
-}
 
-
-interface Callback {
-    void invoke(Node node);
+    interface Callback {
+        void invoke(Node node);
+    }
 }
