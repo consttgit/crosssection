@@ -93,6 +93,8 @@ class CrossSection(object):
         ) * thickness * ds
 
     def get_polar_inertia_moment(self, lazy=True):
+        """Return a polar moment of inertia (Ip).
+        """
         return (self.get_inertia_moment(lazy).x
                 + self.get_inertia_moment(lazy).y)
 
