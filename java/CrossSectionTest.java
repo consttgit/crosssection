@@ -1,6 +1,3 @@
-import java.util.ArrayList;
-
-
 public class CrossSectionTest {
 
     public static void main(String[] args) {
